@@ -275,11 +275,12 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
     Event.ttime=ttimeHF
 
     # Create plots  
+    
+    print("Making figures\n")
+    if not os.path.exists('figs'):   # create and go into pkls dir
+        os.mkdir('figs')
+    os.chdir('figs')
     try:
-        print("Making figures\n")
-        if not os.path.exists('figs'):   # create and go into pkls dir
-            os.mkdir('figs')
-        os.chdir('figs')
         if not showPlots:
             mpl.use('Agg')  # needed to plot without using the X-session
         # individual plot runs    
@@ -290,10 +291,11 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
         Eazplot(EBB,EHF,Emd,trdf,eventname,ttimeHF, prePtime=prePtime,show=showPlots,cutoff=cutoff)
         Ehistogram(EBB,EHF,Emd,eventname,ttimeHF, prePtime=prePtime,show=showPlots,cutoff=cutoff)
         stationEmapPygmt(EBB,Event.origin[0],trdf,eventname,ttimeHF, prePtime=prePtime,cutoff=15,itername=Event.iter,show=showPlots)
-        os.chdir('..')
         mpl.pyplot.close('all')  # they don't close themselves
     except:
-        print("ERROR: plotting results for "+eventname)
+        print("ERROR: Plotting results for "+eventname)
+
+    os.chdir('..')
 
     results["Droptimes"]=[droptimes]
 
