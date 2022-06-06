@@ -293,7 +293,7 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
         stationEmapPygmt(EBB,Event.origin[0],trdf,eventname,ttimeHF, prePtime=prePtime,cutoff=15,itername=Event.iter,show=showPlots)
         mpl.pyplot.close('all')  # they don't close themselves
     except:
-        print("ERROR: Plotting results for "+eventname) # test 
+        print("ERROR: Plotting Results for "+eventname) # test 
 
     os.chdir('..')
 
