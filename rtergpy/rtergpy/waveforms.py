@@ -73,24 +73,24 @@ def theorPinfo(eloc,etime,sloc):
     return  ptime,toa,rayp,inc,distdeg
 
 
-def get_respinv(network,eloc,etime,rads,chan):
+def get_respinv(network,eloc,etime,rads,chan,src="IRIS",**kwargs):
     """
     Algorithm to use Obspy's metadata to pull response and other metadata.  Returns an apporpiate
     inventory class.
     A.V. Newman Mon Jul 26 15:26:35 EDT 2021
     """
-    fclient = fdsnClient()
+    client = fdsnClient(src)
 
     elat,elon,edep = eloc
     minrad,maxrad = rads 
     
-    inventory = fclient.get_stations(network = network, 
+    inventory = client.get_stations(network = network, 
             latitude = elat, longitude = elon, 
             minradius = minrad, maxradius = maxrad, 
             starttime=etime-86400, endtime=etime,
             channel=chan,
             #location="00",
-            matchtimeseries=True,
+            #matchtimeseries=True, # may not work if client is not iris
             #filename="test.txt", format="text",  # cannot be used with response
             #filename="test.xml", format="xml",
             level="response"
@@ -109,9 +109,9 @@ def downloadwaves(inventory,eloc,etime,pwindow=Defaults.waveparams[1],src=Defaul
     if src == 'NEIC':
         print("Getting waves from NEIC")
         nclient=nClient()
-    #elif src == 'ISC':
-    #    print("Getting waves from ISC")
-    #    fclient=fdsnClient("ISC")
+    elif src == 'RASPISHAKE':
+        print("Getting waves from RASPISHAKE")
+        rsclient=fdsnClient("RASPISHAKE")
     else:
         print("Getting waves from IRIS")
         fclient=fdsnClient("IRIS")
@@ -124,14 +124,18 @@ def downloadwaves(inventory,eloc,etime,pwindow=Defaults.waveparams[1],src=Defaul
         sheight=sz-sldep
         sloc=slat,slon,sheight
         Ptime,Ptoa,Prayp,Pinc,distdeg=theorPinfo(eloc,etime,sloc)
+        StartTime=Ptime+pwindow[0]
+        EndTime=Ptime+pwindow[1]
         distmeters,az,baz=ll2az(eloc[0],eloc[1],slat,slon)
         neti,stati,loci,chani=chan.split(".")
         stlocal='' # start with empty field in case first wave fails
         try:
             if src == 'NEIC':
-                stlocal=nclient.get_waveforms(neti,stati,loci,chani,Ptime+pwindow[0],Ptime+pwindow[1])
+                stlocal=nclient.get_waveforms(neti,stati,loci,chani,StartTime,EndTime)
+            elif src == 'RASPISHAKE':
+                stlocal=rsclient.get_waveforms(neti,stati,loci,chani,starttime=StartTime, endtime=EndTime) 
             else:
-                stlocal=fclient.get_waveforms(neti,stati,loci,chani,Ptime+pwindow[0],Ptime+pwindow[1], minimumlength=120, longestonly=True)
+                stlocal=fclient.get_waveforms(neti,stati,loci,chani,StartTime,EndTime, minimumlength=120, longestonly=True)
             #print("%s.%s.%s.%s downloaded. Continuing.." %(neti,stati,loci,chani))
         except:
             print("%s.%s.%s.%s failed to download. Continuing.." %(neti,stati,loci,chani))
@@ -413,8 +417,7 @@ def getwaves(Defaults=Defaults, Event=Event, **kwargs):
 
     edirit,origwd=eventdir(Defaults=Defaults,Event=Event,create=True,cd=True)
     print("Checking for stations available within range from IRIS")
-    inventory = get_respinv(network,eloc,etime,rads,chan) # from fsdn
-    #print("Pulling Waveforms from NEIC")
+    inventory = get_respinv(network,eloc,etime,rads,chan,src=src) # defaults to IRIS
     st = downloadwaves(inventory, eloc, etime, pwindow,src=src)  # stream
     if len(st) == 0:
         raise ValueError("ERROR: No waveforms obtained.") 
