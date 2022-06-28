@@ -50,7 +50,7 @@ class defaults:
         rho_site=float(DEFS["rho_site"])
         self.siteparams=[pvel_site,rho_site]
         
-        # frequency range
+        # frequency range and other waveform params
         f1min=float(DEFS["f1min"]) ; f1max=float(DEFS["f1max"]) # BB
         f2min=float(DEFS["f2min"]) ; f2max=float(DEFS["f2max"]) # HF 
         fbands=[[f1min,f1max],[f2min,f2max]]
@@ -58,6 +58,7 @@ class defaults:
         prePtime=int(DEFS["prePtime"])
         postPtime=int(DEFS["postPtime"])
         pwindow=[prePtime,postPtime]
+        self.snr=float(DEFS["snr"])
         self.waveparams=[fbands,pwindow,tstep]
         self.resample=int(DEFS["resample"])  # samples per second
         self.smoothkern=int(DEFS["smoothkern"])  # kernel for gaussian smoothing of data for duration estimates (1/2 on each side)
@@ -70,6 +71,8 @@ class defaults:
 
         # processing tacers/energy
         self.cutoff=float(DEFS["cutoff"])  # factor by which to ignore data (values must be between mean/cutoff and mean*cutoff)
+        self.snr=float(DEFS["snr"])  # minimum signal to noise ratio for processing
+        self.pre_filt= (float(DEFS["pflp0"]), float(DEFS["pflp1"]), float(DEFS["pfhp1"]), float(DEFS["pfhp0"])) # low pass complete, low pass begin, high pass begin, high pass complete
 
         # Waveform source
         self.src = DEFS["src"]  # alternative 'IRIS'

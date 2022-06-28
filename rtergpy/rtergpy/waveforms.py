@@ -1,3 +1,4 @@
+from locale import setlocale
 from obspy.core.stream import Stream
 from obspy.clients.neic import Client as nClient
 from obspy.clients.fdsn import Client as fdsnClient
@@ -414,6 +415,8 @@ def getwaves(Defaults=Defaults, Event=Event, **kwargs):
     pwindow=Defaults.waveparams[1]
     edirbase=Defaults.edirbase
     src=Defaults.src
+    snrthreshold=float(Defaults.snr)
+    pre_filt=Defaults.pre_filt
 
     edirit,origwd=eventdir(Defaults=Defaults,Event=Event,create=True,cd=True)
     print("Checking for stations available within range from IRIS")
@@ -421,6 +424,29 @@ def getwaves(Defaults=Defaults, Event=Event, **kwargs):
     st = downloadwaves(inventory, eloc, etime, pwindow,src=src)  # stream
     if len(st) == 0:
         raise ValueError("ERROR: No waveforms obtained.") 
+    total = 0
+    kept = 0
+    stlocal = Stream()
+    rPtime = -float(pwindow[0])
+    print("rPtime = ",rPtime)
+    for tr in st:
+        total += 1
+        trfilt=tr.copy()
+        trfilt.remove_response(output = 'VEL', pre_filt = pre_filt)
+        # may remove
+        trfilt.detrend('demean')           # preprocess data
+        trfilt.detrend('linear')
+        trfilt.detrend('demean')           # preprocess data
+
+        snrtr = signal2noise(trfilt, rPtime=rPtime, window=rPtime/2)
+        print("Trace SNR = ", snrtr, total)
+        if snrtr >= snrthreshold:
+            sttemp = Stream(traces=[tr])
+            stlocal += sttemp
+            kept += 1
+    st = stlocal 
+    print(kept," of ",total,"traces were kept above SNR threshold", snrthreshold)
+
     now=UTCDateTime()
     # metadata I want to save for later. note, anything that is a list neds to be within brackets  
     df=pd.DataFrame({"eventname":eventname,"iteration":runiter,"etime":etime,"eloc":[eloc],
@@ -678,6 +704,31 @@ def tacerstats(tacer):
     df=pd.merge(maxtacer,maxtacertime,right_index=True,left_index=True)
 
     return [med,m25,m75], df
+
+def signal2noise(tr, rPtime=60, window=10,**kwargs):
+    #rPtime is relative time of P arrival to the beginning of the window [s]
+    #window is size of window for calculating the pre-P noise and post P [s]  
+    sps=int(tr.stats.sampling_rate)
+    vel=tr.data   
+    vel_square = np.square(vel)
+    
+    if window < rPtime:
+        #noise before event 
+        swin=int((rPtime/2-window/2)*sps-1)      
+        ewin=int(swin+window*sps-1)
+        noise = np.mean(vel_square[swin:ewin])      #based on RS sampling rate (another if statement for IRIS data sampling rates?)
+ 
+        #signal after the pwave arrives
+        pwin=int(rPtime*sps-1)
+        epwin=int(pwin+window*sps-1)
+        signal = np.mean(vel_square[pwin:epwin])     #based on RS sampling rate 
+ 
+        ratio = signal/noise
+        return(ratio)  
+    else :
+        print("WARNING:  window ",window," is greater than rPtime", rPtime, "returning 0.")
+        return 0
+    
 
 ### old  ###########################
  
