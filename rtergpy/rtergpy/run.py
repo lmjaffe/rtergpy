@@ -289,6 +289,7 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
         # individual plot runs    
         droppcts=[0.5,.25,0.1]
         droptimes=Efluxplots(dEHFdtSmooth, trdf, Event=Event, Defaults=Defaults, pcts=droppcts, show=showPlots)    
+        results["Droptimes"]=[droptimes]
         tacerplot(tacerHF,trdf,ttimes,meds,eventname,show=showPlots)
         Edistplot(EBB,EHF,Emd,trdf,eventname,ttimeHF, prePtime=prePtime,show=showPlots,cutoff=cutoff)
         Eazplot(EBB,EHF,Emd,trdf,eventname,ttimeHF, prePtime=prePtime,show=showPlots,cutoff=cutoff)
@@ -299,8 +300,6 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
         print("ERROR: Plotting Results for "+eventname) # test 
 
     os.chdir('..')
-
-    results["Droptimes"]=[droptimes]
 
     # save results to files
     try:
