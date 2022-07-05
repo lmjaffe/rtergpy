@@ -151,10 +151,18 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
         # runiter.step() increases iteration by 1
 
 # remove any additional locations at same site (or site repeats!)
+    prePtime=Defaults.waveparams[1][0]
     STATCHAN0=''
     for tr in st:
         STATCHAN=str(tr.stats.network)+str(tr.stats.station)
-        if STATCHAN == STATCHAN0:
+        trWindow=UTCDateTime(tr.stats.endtime)-UTCDateTime(tr.stats.starttime)
+        nDataExpected=trWindow*tr.stats.sampling_rate+1
+
+        if STATCHAN == STATCHAN0:  # multiple sensors at same location
+            st.remove(tr)
+        elif trWindow <  0-prePtime:  # too short a window (prePtime is negative)
+            st.remove(tr)
+        elif tr.stats.npts < nDataExpected:  # less data than expected
             st.remove(tr)
         STATCHAN0=STATCHAN
 
@@ -182,7 +190,6 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
     dEHFdt=EHF.diff()
     dEHFdtSmooth=EHFSmooth.diff()
 
-    prePtime=Defaults.waveparams[1][0]
     tacerBB=tacer(dEBBdtSmooth,prePtime=prePtime)
     tacerHF=tacer(dEHFdtSmooth,prePtime=prePtime)
     ttimes,meds = tacerstats(tacerHF) 
