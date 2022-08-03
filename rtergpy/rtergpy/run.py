@@ -332,9 +332,11 @@ def src2ergs(Defaults=defaults(), Event=event(), showPlots=False, **kwargs):
 def mergeResults(Defaults=defaults(), iteration='00', **kwargs):
     """
     Reads all processed event information and returns a master dataframe of summary result information
-    """
+    """ 
     import glob
     import pandas as pd
+    
+    
     files= glob.glob(Defaults.edirbase +'/[12]???/[12]*/'+iteration+'/pkls/Results*.pkl')
     prior='' 
     for file in files:
